@@ -14,13 +14,34 @@ module.exports = {
                 data: errors
             })
         } else {
-            console.log(customValidator.checkEmail(req,res,next));
-            userModel.create({ name: req.body.name, email: req.body.email, password: req.body.password }, function (err, result) {
-                if (err)
+            userModel.findOne({ email: req.body.email }, function (err, userInfo) {
+                if (err) {
                     next(err);
-                else
-                    res.status(201).json({ statusCode: 201, message: "User added successfully!!!" });
-
+                } else {
+                    if (userInfo) {
+                        res.json({
+                            statusCode: 400,
+                            message: 'Bad request',
+                            data: {
+                                errors: [
+                                    {
+                                        value: userInfo.email,
+                                        msg: 'email already exist',
+                                        param: 'email',
+                                        location: 'body'
+                                    }
+                                ]
+                            }
+                        })
+                    } else {
+                        userModel.create({ name: req.body.name, email: req.body.email, password: req.body.password }, function (err, result) {
+                            if (err)
+                                next(err);
+                            else
+                                res.status(201).json({ statusCode: 201, message: "User added successfully!!!" });
+                        });
+                    }
+                }
             });
         }
     },
