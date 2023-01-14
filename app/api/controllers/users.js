@@ -46,21 +46,30 @@ module.exports = {
         }
     },
     authenticate: function (req, res, next) {
-        userModel.findOne({ email: req.body.email }, function (err, userInfo) {
-            if (err) {
-                next(err);
-            } else {
-                if (bcrypt.compareSync(req.body.password, userInfo.password)) {
-                    const token = jwt.sign({ id: userInfo._id }, req.app.get('secretKey'), { expiresIn: '30d' });
-                    var userInfoResult = {
-                        name: userInfo.name,
-                        email: userInfo.email
-                    }
-                    res.json({ status: "success", message: "Authenticate successfully", data: { user: userInfoResult, token: token } });
+        let errors = validationResult(req);
+        if(!errors.isEmpty()){
+            res.json({
+                statusCode: 400,
+                message: 'Bad request',
+                data: errors
+            })
+        } else {
+            userModel.findOne({ email: req.body.email }, function (err, userInfo) {
+                if (err) {
+                    next(err);
                 } else {
-                    res.json({ status: "error", message: "Invalid password!!!", data: null });
+                    if (bcrypt.compareSync(req.body.password, userInfo.password)) {
+                        const token = jwt.sign({ id: userInfo._id }, req.app.get('secretKey'), { expiresIn: '30d' });
+                        var userInfoResult = {
+                            name: userInfo.name,
+                            email: userInfo.email
+                        }
+                        res.json({ status: "success", message: "Authenticate successfully", data: { user: userInfoResult, token: token } });
+                    } else {
+                        res.json({ status: "error", message: "Invalid password!!!", data: null });
+                    }
                 }
-            }
-        });
+            });
+        }
     },
 }

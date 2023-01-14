@@ -1,6 +1,7 @@
 const bookModel = require('../models/books');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { validationResult } = require('express-validator');
 
 module.exports = {
     findAll: function (req, res, next) {
@@ -30,21 +31,30 @@ module.exports = {
     },
 
     createBook: function (req, res, next) {
-        bookModel.create({
-            title: req.body.title,
-            writer: req.body.writer,
-            released_on: req.body.released_on
-        }, function (err, result) {
-            if (err) {
-                next(err);
-            } else {
-                res.json({
-                    status: 'success',
-                    message: 'Create new book successfully',
-                    data: result
-                });
-            }
-        });
+        let errors = validationResult(req);
+        if(!errors.isEmpty()){
+            res.json({
+                statusCode: 400,
+                message: 'Bad request',
+                data: errors
+            })
+        } else {
+            bookModel.create({
+                title: req.body.title,
+                writer: req.body.writer,
+                released_on: req.body.released_on
+            }, function (err, result) {
+                if (err) {
+                    next(err);
+                } else {
+                    res.json({
+                        status: 'success',
+                        message: 'Create new book successfully',
+                        data: result
+                    });
+                }
+            });
+        }
     },
 
     findById: function (req, res, next) {
